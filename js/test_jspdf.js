@@ -9,6 +9,7 @@ function Test_jspdf_Create()
 	console.log("Test_jspdf_Create");
 	// get url // https://i.imgur.com/ZOuqd4f.jpg // CORS bad // http://www.brooklynvegan.com/files/2018/08/aphex-twin-collapse.jpg
 	var file_data = document.getElementById("cover").files[0];
+	var url = document.getElementById("url").value;
 	console.log(file_data);
 
 // CORS bad	
@@ -19,7 +20,13 @@ function Test_jspdf_Create()
 
 //		doc.save('Test_jspdf_Create.pdf');
 // console.log("KOTZ");
-readFile(file_data);
+	var qr_div = document.createElement("div");
+	var qrcode = new QRCode(qr_div);
+	qrcode.makeCode(url);
+	setTimeout(function(){ fetchQrCode(qr_div, file_data); }, 100);
+
+
+
 //	
 //});
 // 'https://upload.wikimedia.org/wikipedia/commons/7/75/Information-silk.png'
@@ -28,7 +35,7 @@ readFile(file_data);
 }
 
 
-function readFile(file_data) {
+function readFile(file_data, url_data) {
 	console.log("file " + file_data)
 
 	var reader = new FileReader();
@@ -50,6 +57,7 @@ function readFile(file_data) {
 			x = factor_x * 100;
 			y = factor_y * 100;
 			doc.addImage(imgData, top_x, top_y, x, y);
+			doc.addImage(url_data, 0, 0, 25, 25);
 			doc.save('Test_jspdf_Create.pdf');
 		});
 
@@ -66,7 +74,8 @@ function GetImageSize(image_data, callback)
 	var img = new Image(); // document.createElement('img');
 	img.src = image_data;
 	img.async = false;
-	img.onload = function() {
+	img.onload = function() 
+	{
 		// HATE
 		// JS
 		// no sync function for nanosecond operation!!!!!!!!!!!
@@ -78,6 +87,30 @@ function GetImageSize(image_data, callback)
 
 	}
 
+}
+
+function fetchQrCode(qr_div, file_data)
+{
+	var qr_img = qr_div.lastElementChild;
+	var url_data = qr_img.src;
+
+	readFile(file_data, url_data);
+}
+
+
+function fetchUrlQrCode(url, file_data, url_callback)
+{
+	var qr_url_rest= "https://api.qrserver.com/v1/create-qr-code/?data=" + url + "&size=500x500&margin=50"
+	var xhr = new XMLHttpRequest();
+//    xhr.header("Access-Control-Allow-Origin", "*");
+	xhr.open('get', qr_url_rest);
+	xhr.responseType = 'blob';
+	xhr.onload = function()
+	{
+		console.log(xhr.response);
+		url_callback(file_data, xhr.response);
+	};
+	xhr.send();
 }
 
 function toDataURL(url, callback){
