@@ -24,3 +24,26 @@ button.success_toggle {
     margin-left: 0;
 }
 
+
+.w3-input {
+    padding: 8px;
+    display: block;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+}
+input {
+    overflow: visible;
+}
+input {
+    font: inherit;
+    margin: 0;
+}
+
+input, label
+{
+    font-family: Verdana,sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
