@@ -1,7 +1,9 @@
 
 // create pdf of 10x15cm
 
-
+// create and read code
+// load cover
+// generate PDF
 
 
 function Test_jspdf_Create()
@@ -20,12 +22,21 @@ function Test_jspdf_Create()
 
 //		doc.save('Test_jspdf_Create.pdf');
 // console.log("KOTZ");
-	var qr_div = document.createElement("div");
-	var qrcode = new QRCode(qr_div);
-	qrcode.makeCode(url);
-	setTimeout(function(){ fetchQrCode(qr_div, file_data); }, 100);
+	var url_a = document.createElement('a');
+	url_a.setAttribute('href', url);
+	var hostname = url_a.hostname;  //  'example.com'
 
-
+	if(hostname === "open.spotify.com")
+	{
+		fetchSpotify(url, file_data);
+	}
+	else
+	{
+		var qr_div = document.createElement("div");
+		var qrcode = new QRCode(qr_div);
+		qrcode.makeCode(url);
+		setTimeout(function(){ fetchQrCode(qr_div, file_data); }, 100);
+	}
 
 //	
 //});
@@ -35,7 +46,10 @@ function Test_jspdf_Create()
 }
 
 
-function readFile(file_data, url_data) {
+
+
+
+function readFile(file_data, url_data, spotify) {
 	console.log("file " + file_data)
 
 	var reader = new FileReader();
@@ -57,7 +71,14 @@ function readFile(file_data, url_data) {
 			x = factor_x * 100;
 			y = factor_y * 100;
 			doc.addImage(imgData, top_x, top_y, x, y);
-			doc.addImage(url_data, 0, 0, 25, 25);
+			if(spotify===true)
+			{
+				doc.addImage(url_data, 0, 0, 25, 100);
+			}
+			else
+			{
+				doc.addImage(url_data, 2, 2, 21, 21);
+			}
 			doc.save('Test_jspdf_Create.pdf');
 		});
 
@@ -72,8 +93,7 @@ function readFile(file_data, url_data) {
 function GetImageSize(image_data, callback)
 {
 	var img = new Image(); // document.createElement('img');
-	img.src = image_data;
-	img.async = false;
+
 	img.onload = function() 
 	{
 		// HATE
@@ -86,7 +106,7 @@ function GetImageSize(image_data, callback)
 		callback(width, height);
 
 	}
-
+	img.src = image_data;
 }
 
 function fetchQrCode(qr_div, file_data)
@@ -96,6 +116,116 @@ function fetchQrCode(qr_div, file_data)
 
 	readFile(file_data, url_data);
 }
+
+function fetchSpotify(url, file_data)
+{
+	var url_a = document.createElement('a');
+	url_a.setAttribute('href', url);
+	console.log(url_a.pathname);
+	var spoty_path = url_a.pathname.split('/');
+	var spoty_codes = [];
+	for(num in spoty_path)
+	{
+		if(num == 0)
+		{
+			continue;
+		}
+		if ( num < spoty_path.length-1)
+		{
+			spoty_codes.push("spotify");
+		}
+		spoty_codes.push(spoty_path[num]);
+		
+	}
+
+	var spoty_url = "https://scannables.scdn.co/uri/plain/png/ffffff/black/1000/" + spoty_codes.join(':');
+	console.log("Spotify: " + spoty_url);
+	var xhr = new XMLHttpRequest();
+//    xhr.header("Access-Control-Allow-Origin", "*");
+	xhr.open('get', spoty_url);
+	xhr.responseType = 'blob';
+	xhr.onload = function()
+	{
+		var img = new Image();
+
+		img.onload = function()
+		{ 
+			var canvas = document.createElement('canvas');
+			canvas.height = img.naturalWidth; // or 'width' if you want a special/scaled size
+			canvas.width = img.naturalHeight; // or 'height' if you want a special/scaled size
+			var canvas_context = canvas.getContext('2d');
+
+        		canvas_context.rotate(-90 * Math.PI / 180);
+	                canvas_context.translate(-canvas.height, 0);
+			canvas_context.drawImage(img, 0, 0);
+
+			// ... or get as Data URI
+			var data = canvas.toDataURL();
+			readFile(file_data, data, true);
+		};
+		img.src = URL.createObjectURL(xhr.response);
+	};
+	xhr.send();
+
+}
+
+
+
+function dead(dead)
+{
+	var xhr = new XMLHttpRequest();
+//    xhr.header("Access-Control-Allow-Origin", "*");
+	xhr.open('get', spoty_url);
+	xhr.responseType = 'blob';
+	xhr.onload = function()
+	{
+
+		fr = new FileReader();
+		fr.onload = function(event)
+		{
+			console.log(fr.result);
+			readFile(file_data, fr.result, true);
+		}
+		fr.readAsDataURL(xhr.response)
+	};
+	xhr.send();
+	var img = new Image();
+	img.onload = function()
+	{
+	};
+	img.src = spoty_url;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// FRIEDHOF
+
+
+
+
+
+
+
+
 
 
 function fetchUrlQrCode(url, file_data, url_callback)
