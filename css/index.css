@@ -4,13 +4,10 @@ button { /* new default style for <button/> */
     background-color: white;
     color: black;
     padding: 7px 6px;
-/*    float:left; */
     margin: 2px 2px;
     font-size: 16px;
     cursor: pointer;
-/*    white-space: nowrap;*/
 }
-
 
 button.success { /* Orange */
     border-color: #e18805;
@@ -24,20 +21,21 @@ button.success_toggle {
     margin-left: 0;
 }
 
-
 .w3-input {
     padding: 8px;
     display: block;
     border: none;
     border-bottom: 1px solid #ccc;
+}
+
+input {
     width: 100%;
-}
-input {
-    overflow: visible;
-}
-input {
     font: inherit;
-    margin: 0;
+    padding: 8px 8px;
+    margin: 4px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    outline: none;
 }
 
 input, label
@@ -47,3 +45,28 @@ input, label
     line-height: 1.5;
 }
 
+div.content_body {
+    margin-top : 40px;
+    max-width: 1012px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+div.section
+{
+    margin-top : 15px;
+    margin-bottom : 15px;
+}
+
+/*
+h1, h2
+{
+    font-family: Verdana,sans-serif;
+}
+*/
+
+/*
+input:focus {
+    background-color: lightblue;
+}
+*/
