@@ -122,7 +122,7 @@ function GeneratePdf(imgData, url_data, spotify)
 		}
 		else
 		{
-			doc.addImage(url_data, 2, 2, 21, 21);
+			doc.addImage(url_data, 2.5, 2.5, 21.5, 21.5);
 		}
 		doc.save('code-stream.pdf'); // TODO filename from cover image
 	});
