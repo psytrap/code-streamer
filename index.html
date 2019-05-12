@@ -27,6 +27,19 @@
 	<div class="section">
 		<button class="success" onclick="CreatePdf()">Create PDF</button></div></div>
 <div class="section">
+	<h2 onclick="toggleDisplay('dual')">Dual PDF Generator</h2>
+	<div id="dual"> <!-- style="display:none"> -->
+	<div class="section">
+		<label>Upload Cover Image</label>
+		<input id="coverA" type=file accept="image/*"/>
+		<input id="coverB" type=file accept="image/*"/></div>
+	<div class="section">
+		<label>Encoded URL</label>
+		<input id="urlA" type="url">
+		<input id="urlB" type="url"></div>
+	<div class="section">
+		<button class="success" onclick="CreateDualPdf()">Create Dual PDF</button></div></div>
+</div>
 	<h2>Examples</h2>
 	<p><small><a href="https://soundcloud.com/samayamusic/fusion-alchemist-tribal-trap-world-bass-psychedelic-eastern-vibes-glitch-hop-mixtape">Samaya - Fusion Alchemist</a> @ SoundCloud.com</p></small>
 	<img src="examples/samaya.png"/>

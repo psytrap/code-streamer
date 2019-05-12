@@ -14,7 +14,7 @@ function CreatePdf()
 	if(hostname === "open.spotify.com")
 	{
 		var spotify_code_data;
-		MakeSpotifyRequest(url)
+		MakeSpotifyRequest(url, true)
 			.then(function(code_data)
 			{
 				console.log("Loaded Spotify code");
@@ -50,13 +50,97 @@ function CreatePdf()
 	}
 }
 
+
+function CreateDualPdf()
+{
+	console.log("CreateDualPdf");
+	var file_data = [ document.getElementById("coverA").files[0], document.getElementById("coverB").files[0] ];
+	var url = [document.getElementById("urlA").value, document.getElementById("urlB").value];
+	console.log(file_data);
+	var url_a = document.createElement('a');
+	url_a.setAttribute('href', url[0]);
+	var hostname = [url_a.hostname];
+	url_a.setAttribute('href', url[1]);
+	hostname.push(url_a.hostname);
+
+	if(hostname[0] !== hostname[1])
+	{
+		return // ERROR
+	}
+
+	var dual_image_data = new Array();
+	var dual_code_data = new Array();
+
+	if(hostname[0] === "open.spotify.com")
+	{
+		var spotify_code_data;
+		MakeSpotifyRequest(url[0], false)
+			.then(function(code_data)
+			{
+				console.log("Loaded Spotify code");
+				console.log(code_data);
+				dual_code_data.push(code_data);
+				return MakeReadFileRequest(file_data[0]);
+
+			})
+			.then(function(image_data)
+			{
+				dual_image_data.push(image_data);
+				return MakeSpotifyRequest(url[1], false)
+			})
+			.then(function(code_data)
+			{
+				dual_code_data.push(code_data);
+				return MakeReadFileRequest(file_data[1]);
+
+			})
+			.then(function(image_data)
+			{
+				console.log("Loaded cover image");
+				dual_image_data.push(image_data);
+				GenerateDualPdf(dual_image_data, dual_code_data, true);
+			});
+	}
+	else
+	{
+		var qr_div = document.createElement("div");
+		var qrcode = new QRCode(qr_div);
+		qrcode.makeCode(url[0]);
+		MakeQrCodeRequest(qr_div)
+			.then(function(code_data)
+			{
+				console.log("Loaded QR code");
+				dual_code_data.push(code_data);
+				return MakeReadFileRequest(file_data[0]);
+			})
+			.then(function(image_data)
+			{
+				dual_image_data.push(image_data);
+				qrcode.makeCode(url[1]);
+				return MakeQrCodeRequest(qr_div);
+			})
+			.then(function(code_data)
+			{
+				dual_code_data.push(code_data);
+				return MakeReadFileRequest(file_data[1]);
+			})
+			.then(function(image_data)
+			{
+				console.log("Loaded cover image");
+				dual_image_data.push(image_data);
+				GenerateDualPdf(dual_image_data, dual_code_data, false);
+			});
+	}
+}
+
+
 //
 //
-function MakeSpotifyRequest(url)
+function MakeSpotifyRequest(url, rotate)
 {
 	return new Promise(function(resolve, reject)
 	{
-		fetchSpotify(resolve, reject, url);
+		fetchSpotify(resolve, reject, url, rotate);
 	});
 }
 
@@ -110,8 +194,8 @@ function GeneratePdf(imgData, url_data, spotify)
 		var factor_y = height/Math.max(width,height);
 		console.log("factor " + factor_x + "x" + factor_y)
 		var doc = new jsPDF("landscape", "mm", [150, 100]);
-		top_x = 75 - factor_x * 50;
-		top_y = 50 - factor_y * 50;
+		var top_x = 75 - factor_x * 50;
+		var top_y = 50 - factor_y * 50;
 		x = factor_x * 100;
 		y = factor_y * 100;
 		doc.addImage(imgData, top_x, top_y, x, y);
@@ -128,6 +212,51 @@ function GeneratePdf(imgData, url_data, spotify)
 	});
 }
 
+
+///
+///
+function GenerateDualPdf(img_data, url_data, spotify)
+{
+	GetImageSize(img_data[0], function(widthA, heightA)
+	{
+		
+		GetImageSize(img_data[1], function(widthB, heightB)
+		{
+			var doc = new jsPDF("landscape", "mm", [150, 100]);
+			var scale = ScaleDual(widthA, heightA, 73, 0);
+			doc.addImage(img_data[0], scale[0]+1, scale[1]+1, scale[2], scale[3]);
+			var scale = ScaleDual(widthB, heightB, 73, 27);
+			doc.addImage(img_data[1], scale[0]+76, scale[1]-1, scale[2], scale[3]);
+
+			console.log("Add scan code");
+			if(spotify===true)
+			{
+				doc.addImage(url_data[0], 1, 73+2, 73, 73/4);
+				doc.addImage(url_data[1], 76, 6.5, 73, 73/4);
+			}
+			else
+			{
+				doc.addImage(url_data[0], 3, 74 + 2, 20, 20);
+				doc.addImage(url_data[1], 150-3-20 , 4, 20, 20);
+			}
+			doc.save('code-stream-dual.pdf'); // TODO filename from cover image
+		});
+	});
+}
+
+//
+function ScaleDual(width, height, size, indent)
+{
+	var factor_x = width/Math.max(width,height);
+	var factor_y = height/Math.max(width,height);
+	x = factor_x * size;
+	y = factor_y * size;
+
+	var top_x = size/2 - factor_x * size/2;
+	var top_y = size/2 + indent - factor_y * size/2;
+
+	return [top_x, top_y, x, y];
+}
 
 ///
 ///
@@ -157,7 +286,7 @@ function fetchQrCode(resolve, reject, qr_div)
 
 ///
 ///
-function fetchSpotify(resolve, reject, url, file_data)
+function fetchSpotify(resolve, reject, url, rotate)
 {
 	var url_a = document.createElement('a');
 	url_a.setAttribute('href', url);
@@ -190,12 +319,21 @@ function fetchSpotify(resolve, reject, url, file_data)
 		img.onload = function()
 		{ 
 			var canvas = document.createElement('canvas');
-			canvas.height = img.naturalWidth; // or 'width' if you want a special/scaled size
-			canvas.width = img.naturalHeight; // or 'height' if you want a special/scaled size
 			var canvas_context = canvas.getContext('2d');
+			if(rotate === true)
+			{
+				canvas.height = img.naturalWidth; // or 'width' if you want a special/scaled size
+				canvas.width = img.naturalHeight; // or 'height' if you want a special/scaled size
+	        		canvas_context.rotate(-90 * Math.PI / 180);
+		                canvas_context.translate(-canvas.height, 0);
+			}
+			else
+			{
+				canvas.width = img.naturalWidth; // or 'width' if you want a special/scaled size
+				canvas.height = img.naturalHeight; // or 'height' if you want a special/scaled size
+		                // canvas_context.translate(-canvas.width, 0);
+			}
 
-        		canvas_context.rotate(-90 * Math.PI / 180);
-	                canvas_context.translate(-canvas.height, 0);
 			canvas_context.drawImage(img, 0, 0);
 
 			// ... or get as Data URI
@@ -206,4 +344,20 @@ function fetchSpotify(resolve, reject, url, file_data)
 	};
 	xhr.send();
 }
+
+
+function toggleDisplay(id) {
+	var element = document.getElementById(id);
+
+	// If the checkbox is checked, display the output text
+	if (element.style.display === "none")
+	{
+		element.style.display = "block";
+	} else {
+		element.style.display = "none";
+	}
+}
+
+
+
 
